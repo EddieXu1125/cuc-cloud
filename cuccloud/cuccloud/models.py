@@ -6,9 +6,10 @@ from sqlalchemy.orm import backref
 from cuccloud import app, db, login_manager
 from datetime import datetime
 import random
-
+import re
 
 class User(db.Model):
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(36), unique=True)
     usernickname = db.Column(db.String(80))
@@ -49,3 +50,14 @@ class User(db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(user_id)
+
+filename_pattern = re.compile(r'[^\u4e00-\u9fa5]+')
+
+class File(db.Model):
+    __tablename__ = 'files'
+    creator_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete='CASCADE'), primary_key=True, autoincrement=True)
+    filename = db.Column(db.String(64), primary_key=True)
+    hash_value = db.Column(db.String(128))
+    shared = db.Column(db.Boolean, default=False)
+
+    # def upload_file(user,data):
