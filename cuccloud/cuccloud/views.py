@@ -2,20 +2,15 @@
 
 from types import MethodDescriptorType
 from typing import Hashable
-# from flask.json import detect_encoding
+
 
 from flask.signals import template_rendered
-from sqlalchemy.sql.expression import true
+from sqlalchemy.sql.expression import false, true
 from cuccloud import app, db
 from cuccloud.models import User
 from flask import render_template, redirect, request, jsonify, flash, get_flashed_messages, send_from_directory, url_for
 from flask_login import login_required, login_user, logout_user, current_user
-import random
-import os
-import json
-import hashlib
-import re
-import uuid
+import random,os,json,hashlib,re,uuid
 from flask_login import LoginManager
 from sqlalchemy import and_, or_
 
@@ -32,17 +27,17 @@ def login():
         password = request.values.get('password').strip()
 
         if username == '' or password == '':
-            return flash('用户名或密码不能为空')
+            return flash('用户名或密码不能为空', category='error')
 
         user = User.query.filter_by(username=username).first()
 
         if user == None:
-            return flash('用户名不存在')
+            return flash('用户名不存在', category='error')
 
         m = hashlib.md5()
         m.update((password+user.salt).encode('utf-8'))
         if (m.hexdigest() != user.password):
-            return flash('用户名或密码错误')
+            return flash('用户名或密码错误', category='error')
 
         login_user(user)
 
@@ -74,8 +69,10 @@ def sign_up():
             flash('用户名至少5位', category='error')
         elif (detectionname(username) != True):
             flash('用户名格式不正确(只能英文和数字组合)', category='error')
+        elif(detectionnick(usernickname)):
+            flash('昵称格式不正确', category='error')
         elif password1 != password2:
-            flash('密码不一致', category='error')
+            flash('输入密码不一致', category='error')
         elif len(password1) < 5:
             flash('密码至少5位', category='error')
         elif detectionpassword(password1) != True:
@@ -99,12 +96,23 @@ def sign_up():
 
 # 用户名检测
 def detectionname(username):
+    if len(username)<=36:
+        return True
+    elif username.isalnum:
+        return True
+    return False
 
-    return True
+# 昵称检测
+def detectionnick(usernickname):
+    if usernickname.isprintable:
+        return True
+    return False
 
 # 密码检测
 def detectionpassword(password):
-    return True
+    if re.search("^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).*$", password) and len(password) >= 8:
+        return True
+    return False
 
 
 
