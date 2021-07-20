@@ -69,7 +69,7 @@ def sign_up():
             flash('用户名至少5位', category='error')
         elif (detectionname(username) != True):
             flash('用户名格式不正确(只能英文和数字组合)', category='error')
-        elif(detectionnick(usernickname)):
+        elif(detectionnick(usernickname)!=True):
             flash('昵称格式不正确', category='error')
         elif password1 != password2:
             flash('输入密码不一致', category='error')
@@ -117,23 +117,32 @@ def detectionpassword(password):
 
 
 # 文件上传
-@app.route('/upload/', methods={"post"})
+@app.route('/upload/', methods={"GET","POST"})
 @login_required
 def upload():
-    file = request.files['file']
-    file_ext = ''
-    save_dir = app.config['UPLOAD_DIR']
-    if file.filename.find('.') > 0:
-        file_ext = file.filename.rsplit('.')[1].strip().lower()
-    if file_ext in app.config['ALLOWED_EXT']:
-        file_name = str(uuid.uuid4()).replace('-', '') + '.' + file_ext
-        #url = save_to_local(file, file_name)
-        file.save(os.path.join(save_dir,file_name))
-        # if url != None:
-        #     db.session.add(Image(url, current_user.id))
-        #     db.session.commit()
+    if request.method == 'POST':
+        file = request.files['file']
+        file_ext = ''
+        # 每一个用户一个文件夹
+        save_dir = app.config['UPLOAD_DIR']
+        current_user_dir=save_dir + str(current_user.id)
+        if not os.path.exists(current_user_dir):
+            os.mkdir(current_user_dir)        
+        if file.filename.find('.') > 0:
+            file_ext = file.filename.rsplit('.')[1].strip().lower()
+        if file_ext in app.config['ALLOWED_EXT']:
+            file_name = str(uuid.uuid4()).replace('-', '') + '.' + file_ext
+            #url = save_to_local(file, file_name)
+            file.save(os.path.join(current_user_dir,file_name))
+            # if url != None:
+            #     db.session.add(Image(url, current_user.id))
+            #     db.session.commit()
+        
+        return redirect('/index/')
+    else:
+        return render_template('upload.html')
 
-    return redirect('/index/')
+
 
 
 # 主页
